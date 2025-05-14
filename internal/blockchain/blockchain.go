@@ -1,17 +1,17 @@
 package blockchain
 
 type BlockChain struct {
-	blocks []*Block
+	Blocks []*Block // keep it public for kow
 }
 
 func NewBlockChain() *BlockChain {
 	return &BlockChain{
-		blocks: []*Block{NewBlock("Genesis Block", []byte{})},
+		Blocks: []*Block{NewBlock("Genesis Block", []byte{})},
 	}
 }
 
 func (bc *BlockChain) Add(data string) {
-	prevBlock := bc.blocks[len(bc.blocks)-1]
+	prevBlock := bc.Blocks[len(bc.Blocks)-1]
 	newBlock := NewBlock(data, prevBlock.Hash)
-	bc.blocks = append(bc.blocks, newBlock)
+	bc.Blocks = append(bc.Blocks, newBlock)
 }
