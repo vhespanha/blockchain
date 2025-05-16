@@ -15,11 +15,16 @@ const (
 )
 
 type ProofOfWork struct {
-	block  *Block
+	block  *MetaBlock
 	target *big.Int
 }
 
-func NewProofOfWork(b *Block) *ProofOfWork {
+type Result struct {
+	Nonce int
+	Hash  []byte
+}
+
+func NewProofOfWork(b *MetaBlock) *ProofOfWork {
 	target := big.NewInt(1)
 	target.Lsh(target, uint(256-targetBits))
 
@@ -29,7 +34,7 @@ func NewProofOfWork(b *Block) *ProofOfWork {
 func (p *ProofOfWork) prepareData(nonce int) []byte {
 	return bytes.Join(
 		[][]byte{
-			p.block.PrevBlockHash,
+			p.block.PrevHash,
 			p.block.Data,
 			intToHex(p.block.Timestamp),
 			intToHex(int64(targetBits)),
@@ -39,39 +44,38 @@ func (p *ProofOfWork) prepareData(nonce int) []byte {
 	)
 }
 
-func (p *ProofOfWork) Run() (int, []byte) {
-	var hashInt big.Int
+func (p *ProofOfWork) Run() <-chan Result {
+	c := make(chan Result, 1)
 
-	var hash [32]byte
+	go func() {
+		defer close(c)
 
-	// nonce is the incremental counter
-	nonce := 0
+		var hashInt big.Int
 
-	fmt.Printf("Mining the block containing \"%s\"\n", p.block.Data)
+		fmt.Printf("Mining the block containing \"%s\"\n", p.block.Data)
 
-	// todo: return error/not ok if nonce exceeds max
-	for nonce < maxNonce {
-		data := p.prepareData(nonce)
-		hash = sha256.Sum256(data)
-		fmt.Printf("\r%x", hash)
-		hashInt.SetBytes(hash[:])
+		for nonce := range maxNonce {
+			data := p.prepareData(nonce)
+			hash := sha256.Sum256(data)
 
-		if hashInt.Cmp(p.target) == -1 {
-			break
-		} else {
-			nonce++
+			hashInt.SetBytes(hash[:])
+
+			if hashInt.Cmp(p.target) == -1 {
+				c <- Result{Nonce: nonce, Hash: hash[:]}
+				return
+			}
 		}
-	}
 
-	fmt.Printf("\n\n")
+		fmt.Println()
+	}()
 
-	return nonce, hash[:]
+	return c
 }
 
-func (p *ProofOfWork) Validate() bool {
+func (p *ProofOfWork) Validate(nonce int) bool {
 	var hashInt big.Int
 
-	data := p.prepareData(p.block.Nonce)
+	data := p.prepareData(nonce)
 	hash := sha256.Sum256(data)
 	hashInt.SetBytes(hash[:])
 

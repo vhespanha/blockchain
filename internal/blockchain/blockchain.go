@@ -1,17 +1,30 @@
 package blockchain
 
 type BlockChain struct {
-	Blocks []*Block // keep it public for kow
+	Blocks []*MinedBlock // keep it public for kow
 }
 
-func NewBlockChain() *BlockChain {
-	return &BlockChain{
-		Blocks: []*Block{NewBlock("Genesis Block", []byte{})},
+func NewBlockChain() (*BlockChain, error) {
+	genesis, err := NewBlock("Genesis Block", []byte{})
+
+	if err != nil {
+		return nil, err
 	}
+
+	return &BlockChain{
+		Blocks: []*MinedBlock{genesis},
+	}, nil
 }
 
-func (bc *BlockChain) Add(data string) {
+func (bc *BlockChain) Add(data string) error {
 	prevBlock := bc.Blocks[len(bc.Blocks)-1]
-	newBlock := NewBlock(data, prevBlock.Hash)
+	newBlock, err := NewBlock(data, prevBlock.Hash)
+
+	if err != nil {
+		return err
+	}
+
 	bc.Blocks = append(bc.Blocks, newBlock)
+
+	return nil
 }

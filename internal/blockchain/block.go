@@ -1,41 +1,50 @@
 package blockchain
 
 import (
-	"bytes"
-	"crypto/sha256"
-	"strconv"
+	"fmt"
 	"time"
 )
 
-type Block struct {
-	Timestamp     int64
-	Nonce         int // used to verify proof
-	Data          []byte
-	PrevBlockHash []byte
-	Hash          []byte
+type MetaBlock struct {
+	Timestamp int64
+	Data      []byte
+	PrevHash  []byte
 }
 
-// todo: this function is blocking and could be split in two
-func NewBlock(data string, prevBlockHash []byte) *Block {
-	block := &Block{
-		Timestamp:     time.Now().Unix(),
-		Data:          []byte(data),
-		PrevBlockHash: prevBlockHash,
+type MinedBlock struct {
+	MetaBlock
+	Nonce int
+	Hash  []byte
+}
+
+var (
+	ErrMaxNonce = fmt.Errorf("no valid proof found")
+)
+
+func NewBlock(data string, prevHash []byte) (*MinedBlock, error) {
+	return MineBlock(NewMetaBlock(data, prevHash))
+}
+
+func NewMetaBlock(data string, prevHash []byte) *MetaBlock {
+	return &MetaBlock{
+		Timestamp: time.Now().Unix(),
+		Data:      []byte(data),
+		PrevHash:  prevHash,
 	}
-	pow := NewProofOfWork(block)
-	nonce, hash := pow.Run()
-
-	block.Hash = hash
-	block.Nonce = nonce
-
-	return block
 }
 
-// todo: make private or inline if it's not used anywhere else
-func (b *Block) SetHash() {
-	timestamp := []byte(strconv.FormatInt(b.Timestamp, 10))
-	headers := bytes.Join([][]byte{b.PrevBlockHash, b.Data, timestamp}, []byte{})
-	hash := sha256.Sum256(headers)
+func MineBlock(b *MetaBlock) (*MinedBlock, error) {
+	p := NewProofOfWork(b)
+	c := p.Run()
 
-	b.Hash = hash[:]
+	result, ok := <-c
+	if !ok {
+		return nil, ErrMaxNonce
+	}
+
+	return &MinedBlock{
+		MetaBlock: *b,
+		Nonce:     result.Nonce,
+		Hash:      result.Hash,
+	}, nil
 }

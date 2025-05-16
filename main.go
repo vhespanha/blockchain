@@ -8,19 +8,27 @@ import (
 )
 
 func main() {
-	bc := blockchain.NewBlockChain()
+	bc, err := blockchain.NewBlockChain()
+	if err != nil {
+		panic(fmt.Errorf("could not initialize blockchain: %w", err))
+	}
 
-	bc.Add("Send 1 Coin to Vinicius")
-	bc.Add("Send 4 more Coins to Vinicius")
+	if err := bc.Add("Send 1 Coin to Vinicius"); err != nil {
+		panic(err)
+	}
+
+	if err := bc.Add("Send 4 more Coins to Vinicius"); err != nil {
+		panic(err)
+	}
 
 	for _, block := range bc.Blocks {
-		fmt.Printf("Prev. hash: %x\n", block.PrevBlockHash)
+		fmt.Printf("Prev. hash: %x\n", block.PrevHash)
 		fmt.Printf("Data: %s\n", block.Data)
 		fmt.Printf("Hash: %x\n", block.Hash)
 		fmt.Println()
 
-		pow := blockchain.NewProofOfWork(block)
-		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
+		pow := blockchain.NewProofOfWork(&block.MetaBlock)
+		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate(block.Nonce)))
 		fmt.Println()
 	}
 }
