@@ -41,27 +41,25 @@ func (p *ProofOfWork) prepareData(nonce int) []byte {
 func (p *ProofOfWork) Run() <-chan Result {
 	c := make(chan Result, 1)
 
-	go func() {
-		defer close(c)
+	var hashInt big.Int
 
-		var hashInt big.Int
+	fmt.Printf("Mining the block containing \"%s\"\n", p.block.Data)
 
-		fmt.Printf("Mining the block containing \"%s\"\n", p.block.Data)
+	for nonce := range MaxNonce {
+		data := p.prepareData(nonce)
+		hash := sha256.Sum256(data)
+		hashInt.SetBytes(hash[:])
 
-		for nonce := range MaxNonce {
-			data := p.prepareData(nonce)
-			hash := sha256.Sum256(data)
+		if hashInt.Cmp(p.target) == -1 {
+			c <- Result{nonce, hash[:]}
+			close(c)
 
-			hashInt.SetBytes(hash[:])
-
-			if hashInt.Cmp(p.target) == -1 {
-				c <- Result{Nonce: nonce, Hash: hash[:]}
-				return
-			}
+			return c
 		}
+	}
 
-		fmt.Println()
-	}()
+	fmt.Println()
+	close(c)
 
 	return c
 }
