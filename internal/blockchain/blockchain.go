@@ -1,7 +1,7 @@
 package blockchain
 
 type BlockChain struct {
-	Blocks []*MinedBlock // keep it public for kow
+	Blocks []*Block // keep it public for kow
 }
 
 func NewBlockChain() (*BlockChain, error) {
@@ -12,7 +12,7 @@ func NewBlockChain() (*BlockChain, error) {
 	}
 
 	return &BlockChain{
-		Blocks: []*MinedBlock{genesis},
+		Blocks: []*Block{genesis},
 	}, nil
 }
 

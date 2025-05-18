@@ -9,7 +9,7 @@ import (
 )
 
 type ProofOfWork struct {
-	block  *MetaBlock
+	block  *Block
 	target *big.Int
 }
 
@@ -18,7 +18,7 @@ type Result struct {
 	Hash  []byte
 }
 
-func NewProofOfWork(b *MetaBlock) *ProofOfWork {
+func NewProofOfWork(b *Block) *ProofOfWork {
 	target := big.NewInt(1)
 	target.Lsh(target, uint(256-TargetBits))
 
