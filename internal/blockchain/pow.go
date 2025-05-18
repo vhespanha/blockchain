@@ -4,14 +4,8 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"math"
 	"math/big"
 	"strconv"
-)
-
-const (
-	targetBits = 24
-	maxNonce   = math.MaxInt64
 )
 
 type ProofOfWork struct {
@@ -26,7 +20,7 @@ type Result struct {
 
 func NewProofOfWork(b *MetaBlock) *ProofOfWork {
 	target := big.NewInt(1)
-	target.Lsh(target, uint(256-targetBits))
+	target.Lsh(target, uint(256-TargetBits))
 
 	return &ProofOfWork{b, target}
 }
@@ -37,7 +31,7 @@ func (p *ProofOfWork) prepareData(nonce int) []byte {
 			p.block.PrevHash,
 			p.block.Data,
 			intToHex(p.block.Timestamp),
-			intToHex(int64(targetBits)),
+			intToHex(int64(TargetBits)),
 			intToHex(int64(nonce)),
 		},
 		[]byte{},
@@ -54,7 +48,7 @@ func (p *ProofOfWork) Run() <-chan Result {
 
 		fmt.Printf("Mining the block containing \"%s\"\n", p.block.Data)
 
-		for nonce := range maxNonce {
+		for nonce := range MaxNonce {
 			data := p.prepareData(nonce)
 			hash := sha256.Sum256(data)
 
